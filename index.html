@@ -21,7 +21,19 @@ body {
   width:100%; max-width:640px; background:white; border-radius:14px;
   border:2px solid #a8d5c2; padding:20px 22px; margin-bottom:18px;
   box-shadow:0 4px 20px rgba(0,0,0,0.07);
+  display:none;
 }
+.edit-toggle {
+  width:100%; max-width:640px; margin-bottom:12px;
+  display:flex; justify-content:flex-end;
+}
+.btn-toggle {
+  padding:6px 14px; background:white; color:#7abfa8;
+  border:1.5px solid #a8d5c2; border-radius:20px;
+  font-family:'Nunito',sans-serif; font-size:0.72rem; font-weight:800;
+  cursor:pointer; transition:all 0.15s; letter-spacing:0.04em;
+}
+.btn-toggle:hover { background:#f0faf6; border-color:#5ba08a; color:#2d6a5a; }
 .editor-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .editor-title  { font-size:0.7rem; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; color:#7abfa8; }
 .editor-hint   { font-size:0.7rem; color:#aac8be; font-weight:600; margin-bottom:14px; }
@@ -103,6 +115,10 @@ body {
 </head>
 <body>
 
+<!-- EDITOR TOGGLE -->
+<div class="edit-toggle">
+  <button class="btn-toggle" onclick="toggleEditor()">⚙️ Edit Addresses</button>
+</div>
 <!-- EDITOR -->
 <div class="editor">
   <div class="editor-header">
@@ -313,6 +329,15 @@ async function savePDF() {
 
   btn.textContent = '🖨️ Save PDF';
   btn.disabled = false;
+}
+
+// Toggle editor visibility
+function toggleEditor() {
+  const ed  = document.querySelector('.editor');
+  const btn = document.querySelector('.btn-toggle');
+  const visible = ed.style.display === 'block';
+  ed.style.display  = visible ? 'none'  : 'block';
+  btn.textContent   = visible ? '⚙️ Edit Addresses' : '✕ Close Editor';
 }
 
 // Init
