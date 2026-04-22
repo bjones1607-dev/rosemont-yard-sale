@@ -16,24 +16,7 @@ body {
   padding:24px 16px 48px; font-family:'Nunito',sans-serif; min-height:100vh;
 }
 
-/* EDITOR */
-.editor {
-  width:100%; max-width:640px; background:white; border-radius:14px;
-  border:2px solid #a8d5c2; padding:20px 22px; margin-bottom:18px;
-  box-shadow:0 4px 20px rgba(0,0,0,0.07);
-  display:none;
-}
-.edit-toggle {
-  width:100%; max-width:640px; margin-bottom:12px;
-  display:flex; justify-content:flex-end;
-}
-.btn-toggle {
-  padding:6px 14px; background:white; color:#7abfa8;
-  border:1.5px solid #a8d5c2; border-radius:20px;
-  font-family:'Nunito',sans-serif; font-size:0.72rem; font-weight:800;
-  cursor:pointer; transition:all 0.15s; letter-spacing:0.04em;
-}
-.btn-toggle:hover { background:#f0faf6; border-color:#5ba08a; color:#2d6a5a; }
+
 .editor-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .editor-title  { font-size:0.7rem; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; color:#7abfa8; }
 .editor-hint   { font-size:0.7rem; color:#aac8be; font-weight:600; margin-bottom:14px; }
@@ -115,27 +98,6 @@ body {
 </head>
 <body>
 
-<!-- EDITOR TOGGLE -->
-<div class="edit-toggle">
-  <button class="btn-toggle" onclick="toggleEditor()">⚙️ Edit Addresses</button>
-</div>
-<!-- EDITOR -->
-<div class="editor">
-  <div class="editor-header">
-    <div class="editor-title">📍 Sale Addresses</div>
-    <span id="addr-count" style="font-size:0.68rem;font-weight:700;color:#aac8be;"></span>
-  </div>
-  <div class="editor-hint">Edit any address, then click ↺ Update Map. ✅ = pinned, ❌ = not found.</div>
-  <div class="addr-list" id="addr-list"></div>
-  <div class="editor-actions">
-    <button class="btn-add" id="btn-add" onclick="addRow()">+ Add Address</button>
-    <div class="actions-right">
-      <button class="btn-update" id="btn-update" onclick="updateMap()">↺ Update Map</button>
-      <button class="btn-pdf"    id="btn-pdf"    onclick="savePDF()">🖨️ Save PDF</button>
-    </div>
-  </div>
-</div>
-
 <!-- FLYER -->
 <div class="flyer" id="flyer-div">
   <div class="top-bar"></div>
@@ -155,7 +117,7 @@ body {
   <div class="bottom-bar"></div>
 </div>
 
-<div class="tip">💡 Edit addresses above → ↺ Update Map → 🖨️ Save PDF</div>
+
 
 <script>
 const MAX = 10;
@@ -227,6 +189,7 @@ function refreshLegend() {
 
 function buildEditor() {
   const list = document.getElementById('addr-list');
+  if (!list) return;
   list.innerHTML = pins.map((p, i) => {
     const c = COLORS[i % COLORS.length];
     return '<div class="addr-row" id="row-'+i+'">'+
@@ -329,15 +292,6 @@ async function savePDF() {
 
   btn.textContent = '🖨️ Save PDF';
   btn.disabled = false;
-}
-
-// Toggle editor visibility
-function toggleEditor() {
-  const ed  = document.querySelector('.editor');
-  const btn = document.querySelector('.btn-toggle');
-  const visible = ed.style.display === 'block';
-  ed.style.display  = visible ? 'none'  : 'block';
-  btn.textContent   = visible ? '⚙️ Edit Addresses' : '✕ Close Editor';
 }
 
 // Init
