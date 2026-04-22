@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rosemont Yard Sale – April 25</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#e8f4f0; display:flex; flex-direction:column; align-items:center;
+  padding:24px 16px 48px; font-family:'Nunito',sans-serif; min-height:100vh;
+}
+
+/* EDITOR */
+.editor {
+  width:100%; max-width:640px; background:white; border-radius:14px;
+  border:2px solid #a8d5c2; padding:20px 22px; margin-bottom:18px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.07);
+}
+.editor-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.editor-title  { font-size:0.7rem; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; color:#7abfa8; }
+.editor-hint   { font-size:0.7rem; color:#aac8be; font-weight:600; margin-bottom:14px; }
+
+.addr-list { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.addr-row  { display:flex; align-items:center; gap:8px; }
+.addr-num  {
+  width:24px; height:24px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.68rem; font-weight:800; color:white; flex-shrink:0;
+}
+.addr-row input {
+  flex:1; padding:8px 11px; border:1.5px solid #c8e0d8; border-radius:8px;
+  font-family:'Nunito',sans-serif; font-size:0.82rem; font-weight:600;
+  color:#2d4a40; background:#f7faf9; outline:none; transition:border-color 0.15s;
+}
+.addr-row input:focus { border-color:#5ba08a; background:white; }
+.addr-row input.ok  { border-color:#5bba8a; background:#f0faf5; }
+.addr-row input.err { border-color:#f87171; background:#fff5f5; }
+.addr-row input.searching { border-color:#f6c94e; background:#fffdf0; }
+.status { font-size:0.78rem; flex-shrink:0; width:20px; text-align:center; }
+.btn-remove {
+  width:26px; height:26px; border-radius:50%; border:1.5px solid #e0c8c8;
+  background:white; color:#c88a8a; font-size:1rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0;
+}
+.btn-remove:hover { background:#fee2e2; border-color:#f87171; color:#ef4444; }
+
+.editor-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.btn-add {
+  padding:8px 16px; border:2px dashed #a8d5c2; border-radius:20px;
+  background:white; color:#5ba08a; font-family:'Nunito',sans-serif;
+  font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.15s;
+}
+.btn-add:hover { background:#f0faf6; border-color:#5ba08a; }
+.btn-add:disabled { opacity:0.4; cursor:not-allowed; }
+.actions-right { margin-left:auto; display:flex; gap:8px; }
+.btn-update {
+  padding:9px 18px; background:#2d6a5a; color:white; border:none; border-radius:20px;
+  font-family:'Nunito',sans-serif; font-size:0.82rem; font-weight:800;
+  cursor:pointer; transition:background 0.15s;
+}
+.btn-update:hover    { background:#1e4f42; }
+.btn-update:disabled { background:#7abfa8; cursor:not-allowed; }
+.btn-pdf {
+  padding:9px 18px; background:#f4874a; color:white; border:none; border-radius:20px;
+  font-family:'Nunito',sans-serif; font-size:0.82rem; font-weight:800;
+  cursor:pointer; transition:background 0.15s;
+}
+.btn-pdf:hover    { background:#d96a30; }
+.btn-pdf:disabled { background:#f4874a88; cursor:not-allowed; }
+
+/* FLYER */
+.flyer {
+  width:100%; max-width:640px; background:white; border-radius:16px; overflow:hidden;
+  box-shadow:0 12px 48px rgba(0,0,0,0.12); border:3px solid #a8d5c2;
+}
+.top-bar    { height:8px; background:linear-gradient(90deg,#f9a26c,#f6d365,#90e0ae,#74c0d8); }
+.bottom-bar { height:8px; background:linear-gradient(90deg,#74c0d8,#90e0ae,#f6d365,#f9a26c); }
+.flyer-header { padding:28px 32px 20px; text-align:center; border-bottom:1px solid #e8f0ec; }
+.neighborhood-tag { font-size:0.7rem; font-weight:800; letter-spacing:0.2em; text-transform:uppercase; color:#7abfa8; margin-bottom:8px; }
+.flyer-title { font-family:'Fredoka One',cursive; font-size:3.8rem; line-height:1; color:#2d6a5a; }
+.flyer-date  { margin-top:8px; font-size:1.05rem; font-weight:700; color:#f4874a; letter-spacing:0.06em; text-transform:uppercase; }
+
+.map-legend-row { display:flex; }
+.map-wrap { flex:1; min-width:0; height:600px; }
+#flyer-map { width:100%; height:100%; }
+
+.legend-panel {
+  width:190px; flex-shrink:0; background:#f7faf9; border-left:1px solid #d0e8df;
+  padding:14px 12px; display:flex; flex-direction:column;
+}
+.legend-title {
+  font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; font-weight:800; color:#7abfa8;
+  margin-bottom:12px; padding-bottom:7px; border-bottom:1px solid #d0e8df;
+}
+.legend-item { display:flex; align-items:flex-start; gap:8px; margin-bottom:10px; }
+.legend-item:last-child { margin-bottom:0; }
+.legend-num  {
+  width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.65rem; font-weight:800; color:white; flex-shrink:0; margin-top:1px;
+}
+.legend-text   { flex:1; min-width:0; }
+.legend-street { font-size:0.72rem; font-weight:700; color:#2d4a40; line-height:1.3; }
+.legend-city   { font-size:0.6rem; color:#9ab8b0; margin-top:1px; }
+.legend-link   { display:inline-block; font-size:0.6rem; font-weight:700; text-decoration:none; margin-top:2px; color:#5ba08a; }
+.legend-link:hover { color:#2d6a5a; }
+
+.tip { margin-top:14px; font-size:0.72rem; color:#7aaa9a; font-weight:600; text-align:center; }
+</style>
+</head>
+<body>
+
+<!-- EDITOR -->
+<div class="editor">
+  <div class="editor-header">
+    <div class="editor-title">📍 Sale Addresses</div>
+    <span id="addr-count" style="font-size:0.68rem;font-weight:700;color:#aac8be;"></span>
+  </div>
+  <div class="editor-hint">Edit any address, then click ↺ Update Map. ✅ = pinned, ❌ = not found.</div>
+  <div class="addr-list" id="addr-list"></div>
+  <div class="editor-actions">
+    <button class="btn-add" id="btn-add" onclick="addRow()">+ Add Address</button>
+    <div class="actions-right">
+      <button class="btn-update" id="btn-update" onclick="updateMap()">↺ Update Map</button>
+      <button class="btn-pdf"    id="btn-pdf"    onclick="savePDF()">🖨️ Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLYER -->
+<div class="flyer" id="flyer-div">
+  <div class="top-bar"></div>
+  <div class="flyer-header">
+    <div class="neighborhood-tag">Rosemont · Midlothian, VA</div>
+    <div class="flyer-title">Yard Sale</div>
+    <div class="flyer-date">Saturday, April 25th</div>
+  </div>
+  <div class="map-legend-row">
+    <div class="map-wrap"><div id="flyer-map"></div></div>
+    <div class="legend-panel">
+      <div class="legend-title">Locations</div>
+      <div id="legend-items"></div>
+    </div>
+  </div>
+  <div class="bottom-bar"></div>
+</div>
+
+<div class="tip">💡 Edit addresses above → ↺ Update Map → 🖨️ Save PDF</div>
+
+<script>
+const MAX = 10;
+const COLORS = [
+  {bg:'#f4874a',tc:'#fff'},
+  {bg:'#5aaec8',tc:'#fff'},
+  {bg:'#5bba8a',tc:'#fff'},
+  {bg:'#a78bfa',tc:'#fff'},
+  {bg:'#f472b6',tc:'#fff'},
+  {bg:'#fb923c',tc:'#fff'},
+  {bg:'#34d399',tc:'#fff'},
+  {bg:'#60a5fa',tc:'#fff'},
+  {bg:'#f6c94e',tc:'#7a5a00'},
+  {bg:'#c084fc',tc:'#fff'},
+];
+
+// Hardcoded verified coords — edit label freely, coords stay locked until you update
+let pins = [
+  { raw:'2812 Aylesford Dr, Midlothian, VA 23113',   lat:37.5305292, lng:-77.6824505 },
+  { raw:'2518 Follensbee Dr, Midlothian, VA 23113',  lat:37.5294248, lng:-77.6871344 },
+  { raw:'2513 Follensbee Dr, Midlothian, VA 23113',  lat:37.5287169, lng:-77.6876264 },
+];
+
+// MAP
+const map = L.map('flyer-map', { zoomControl:false, scrollWheelZoom:false, dragging:false });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution:'© OpenStreetMap © CARTO', crossOrigin:true
+}).addTo(map);
+
+let markers = [];
+
+function makePin(n, c) {
+  return L.divIcon({
+    className:'',
+    html:'<div style="background:'+c.bg+';color:'+c.tc+';border-radius:50% 50% 50% 0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:Nunito,sans-serif;font-weight:800;font-size:0.72rem;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);transform:rotate(-45deg)"><span style="transform:rotate(45deg);display:block">'+n+'</span></div>',
+    iconSize:[28,28], iconAnchor:[14,28], popupAnchor:[0,-30]
+  });
+}
+
+function refreshMap() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  const valid = pins.filter(p => p.lat && p.lng);
+  valid.forEach((p, i) => {
+    const c = COLORS[i % COLORS.length];
+    const street = p.raw.split(',')[0];
+    const m = L.marker([p.lat, p.lng], { icon:makePin(i+1, c) }).addTo(map);
+    m.bindPopup(
+      '<div style="font-family:Nunito,sans-serif"><b>'+street+'</b><br>'+
+      '<a href="https://maps.google.com/?q='+p.lat+','+p.lng+'" target="_blank" style="color:#5ba08a;font-weight:700;font-size:0.78rem;text-decoration:none">↗ Google Maps</a></div>'
+    );
+    markers.push(m);
+  });
+  if (markers.length > 0) {
+    map.setView([37.5270, -77.6790], 15);
+  }
+}
+
+function refreshLegend() {
+  const valid = pins.filter(p => p.lat && p.lng);
+  document.getElementById('legend-items').innerHTML = valid.map((p, i) => {
+    const c = COLORS[i % COLORS.length];
+    const parts  = p.raw.split(',');
+    const street = parts[0].trim();
+    const city   = parts.slice(1).join(',').trim();
+    return '<div class="legend-item">'+
+      '<div class="legend-num" style="background:'+c.bg+';color:'+c.tc+'">'+(i+1)+'</div>'+
+      '<div class="legend-text">'+
+        '<div class="legend-street">'+street+'</div>'+
+        '<div class="legend-city">'+city+'</div>'+
+        '<a class="legend-link" href="https://maps.google.com/?q='+p.lat+','+p.lng+'" target="_blank">↗ Directions</a>'+
+      '</div></div>';
+  }).join('');
+}
+
+function buildEditor() {
+  const list = document.getElementById('addr-list');
+  list.innerHTML = pins.map((p, i) => {
+    const c = COLORS[i % COLORS.length];
+    return '<div class="addr-row" id="row-'+i+'">'+
+      '<div class="addr-num" style="background:'+c.bg+';color:'+c.tc+'">'+(i+1)+'</div>'+
+      '<input type="text" id="inp-'+i+'" value="'+p.raw+'" class="'+(p.lat?'ok':'err')+'" placeholder="Full address, City, State ZIP" />'+
+      '<span class="status" id="st-'+i+'">'+(p.lat?'✅':'❌')+'</span>'+
+      '<button class="btn-remove" onclick="removePin('+i+')" title="Remove">×</button>'+
+    '</div>';
+  }).join('');
+  document.getElementById('addr-count').textContent = pins.length+' of '+MAX;
+  document.getElementById('btn-add').disabled = pins.length >= MAX;
+}
+
+function addRow() {
+  if (pins.length >= MAX) return;
+  pins.push({ raw:'', lat:null, lng:null });
+  buildEditor();
+  document.getElementById('inp-'+(pins.length-1)).focus();
+}
+
+function removePin(i) {
+  pins.splice(i, 1);
+  buildEditor();
+  refreshLegend();
+  refreshMap();
+}
+
+// Geocode using Nominatim
+async function geocode(raw) {
+  if (!raw.trim()) return null;
+  const q = raw.includes(',') ? raw : raw + ', Midlothian, VA 23113';
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=' + encodeURIComponent(q);
+  try {
+    const res  = await fetch(url, { headers:{'Accept-Language':'en'} });
+    const data = await res.json();
+    if (data && data.length > 0) return { lat:parseFloat(data[0].lat), lng:parseFloat(data[0].lon) };
+  } catch(e) {}
+  return null;
+}
+
+async function updateMap() {
+  const btn = document.getElementById('btn-update');
+  btn.textContent = '⏳ Finding…';
+  btn.disabled = true;
+
+  for (let i = 0; i < pins.length; i++) {
+    const inp = document.getElementById('inp-'+i);
+    const st  = document.getElementById('st-'+i);
+    if (!inp) continue;
+    const raw = inp.value.trim();
+    if (!raw) { pins[i] = {raw:'',lat:null,lng:null}; inp.className=''; st.textContent=''; continue; }
+
+    if (raw !== pins[i].raw || !pins[i].lat) {
+      inp.className = 'searching'; st.textContent = '⏳';
+      const coords = await geocode(raw);
+      pins[i] = { raw, lat:coords?.lat||null, lng:coords?.lng||null };
+    } else {
+      pins[i].raw = raw;
+    }
+    inp.className = pins[i].lat ? 'ok'  : 'err';
+    st.textContent  = pins[i].lat ? '✅' : '❌';
+  }
+
+  buildEditor();
+  refreshLegend();
+  refreshMap();
+  btn.textContent = '↺ Update Map';
+  btn.disabled = false;
+}
+
+// Save PDF — screenshot flyer as flat image, print that
+async function savePDF() {
+  const btn = document.getElementById('btn-pdf');
+  btn.textContent = '⏳ Capturing…';
+  btn.disabled = true;
+
+  await new Promise(r => setTimeout(r, 1200));
+
+  try {
+    const flyer  = document.getElementById('flyer-div');
+    const canvas = await html2canvas(flyer, {
+      useCORS:true, allowTaint:true, scale:2, logging:false,
+      width:flyer.offsetWidth, height:flyer.offsetHeight
+    });
+    const imgData = canvas.toDataURL('image/png');
+    const win = window.open('', '_blank');
+    win.document.write('<!DOCTYPE html><html><head><style>'
+      +'*{margin:0;padding:0;box-sizing:border-box;}'
+      +'@page{margin:0;size:letter portrait;}'
+      +'body{margin:0;padding:0;}'
+      +'img{width:100%;height:auto;display:block;}'
+      +'</style></head><body>'
+      +'<img src="'+imgData+'" />'
+      +'<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>'
+      +'</body></html>');
+    win.document.close();
+  } catch(e) {
+    alert('Capture failed — try screenshotting the flyer instead.');
+  }
+
+  btn.textContent = '🖨️ Save PDF';
+  btn.disabled = false;
+}
+
+// Init
+buildEditor();
+refreshLegend();
+refreshMap();
+</script>
+</body>
+</html>
