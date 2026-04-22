@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -89,28 +90,15 @@ body {
 .map-wrap { flex:1; min-width:0; height:600px; }
 #flyer-map { width:100%; height:100%; }
 
-.legend-panel {
-  width:190px; flex-shrink:0; background:#f7faf9; border-left:1px solid #d0e8df;
-  padding:14px 12px; display:flex; flex-direction:column;
+.qr-strip {
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  padding:10px 20px; background:#f7faf9; border-top:1px solid #e8f0ec;
 }
-.legend-title {
-  font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; font-weight:800; color:#7abfa8;
-  margin-bottom:12px; padding-bottom:7px; border-bottom:1px solid #d0e8df;
-}
-.legend-item { display:flex; align-items:flex-start; gap:8px; margin-bottom:10px; }
-.legend-item:last-child { margin-bottom:0; }
-.legend-num  {
-  width:20px; height:20px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-size:0.65rem; font-weight:800; color:white; flex-shrink:0; margin-top:1px;
-}
-.legend-text   { flex:1; min-width:0; }
-.legend-street { font-size:0.72rem; font-weight:700; color:#2d4a40; line-height:1.3; }
-.legend-city   { font-size:0.6rem; color:#9ab8b0; margin-top:1px; }
-.legend-link   { display:inline-block; font-size:0.6rem; font-weight:700; text-decoration:none; margin-top:2px; color:#5ba08a; }
-.legend-link:hover { color:#2d6a5a; }
+.qr-strip .qr-label { font-size:0.65rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:#7abfa8; }
+#qrcode canvas, #qrcode img { width:70px !important; height:70px !important; }
 
 .tip { margin-top:14px; font-size:0.72rem; color:#7aaa9a; font-weight:600; text-align:center; }
+
 </style>
 </head>
 <body>
@@ -142,10 +130,11 @@ body {
   </div>
   <div class="map-legend-row">
     <div class="map-wrap"><div id="flyer-map"></div></div>
-    <div class="legend-panel">
-      <div class="legend-title">Locations</div>
-      <div id="legend-items"></div>
-    </div>
+
+  </div>
+  <div class="qr-strip">
+    <div class="qr-label">📱 Scan for interactive map</div>
+    <div id="qrcode"></div>
   </div>
   <div class="bottom-bar"></div>
 </div>
@@ -198,9 +187,16 @@ function refreshMap() {
     const c = COLORS[i % COLORS.length];
     const street = p.raw.split(',')[0];
     const m = L.marker([p.lat, p.lng], { icon:makePin(i+1, c) }).addTo(map);
+    var isApple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
+    var mapsUrl = isApple
+      ? 'https://maps.apple.com/?q='+p.lat+','+p.lng
+      : 'https://maps.google.com/?q='+p.lat+','+p.lng;
     m.bindPopup(
-      '<div style="font-family:Nunito,sans-serif"><b>'+street+'</b><br>'+
-      '<a href="https://maps.google.com/?q='+p.lat+','+p.lng+'" target="_blank" style="color:#5ba08a;font-weight:700;font-size:0.78rem;text-decoration:none">↗ Google Maps</a></div>'
+      '<div style="font-family:Nunito,sans-serif;min-width:140px">'+
+      '<b style="font-size:0.9rem;color:#2d4a40">'+street+'</b><br>'+
+      '<a href="'+mapsUrl+'" target="_blank" style="display:inline-block;margin-top:6px;padding:4px 10px;background:#5ba08a;color:white;border-radius:12px;font-weight:700;font-size:0.75rem;text-decoration:none">'+
+      (isApple ? '🍎 Apple Maps' : '📍 Google Maps')+'</a>'+
+      '</div>'
     );
     markers.push(m);
   });
@@ -210,20 +206,7 @@ function refreshMap() {
 }
 
 function refreshLegend() {
-  const valid = pins.filter(p => p.lat && p.lng);
-  document.getElementById('legend-items').innerHTML = valid.map((p, i) => {
-    const c = COLORS[i % COLORS.length];
-    const parts  = p.raw.split(',');
-    const street = parts[0].trim();
-    const city   = parts.slice(1).join(',').trim();
-    return '<div class="legend-item">'+
-      '<div class="legend-num" style="background:'+c.bg+';color:'+c.tc+'">'+(i+1)+'</div>'+
-      '<div class="legend-text">'+
-        '<div class="legend-street">'+street+'</div>'+
-        '<div class="legend-city">'+city+'</div>'+
-        '<a class="legend-link" href="https://maps.google.com/?q='+p.lat+','+p.lng+'" target="_blank">↗ Directions</a>'+
-      '</div></div>';
-  }).join('');
+  // legend removed — map pins handle navigation directly
 }
 
 function buildEditor() {
@@ -336,6 +319,18 @@ async function savePDF() {
 buildEditor();
 refreshLegend();
 refreshMap();
+// Force map to fill full width after layout
+setTimeout(function() { map.invalidateSize(); }, 200);
+
+// QR Code
+new QRCode(document.getElementById("qrcode"), {
+  text: "https://bjones1607-dev.github.io/rosemont-yard-sale",
+  width: 90,
+  height: 90,
+  colorDark: "#2d6a5a",
+  colorLight: "#ffffff",
+  correctLevel: QRCode.CorrectLevel.M
+});
 </script>
 </body>
 </html>
