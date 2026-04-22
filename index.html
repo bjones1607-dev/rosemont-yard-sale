@@ -93,6 +93,30 @@ body {
 #qrcode canvas, #qrcode img { width:70px !important; height:70px !important; }
 
 .tip { margin-top:14px; font-size:0.72rem; color:#7aaa9a; font-weight:600; text-align:center; }
+.addr-strip {
+  padding:14px 16px; background:#fff; border-top:1px solid #e8f0ec;
+}
+.addr-strip-title {
+  font-size:0.62rem; font-weight:800; letter-spacing:0.16em; text-transform:uppercase;
+  color:#7abfa8; margin-bottom:10px;
+}
+.addr-strip-list {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+}
+.addr-card {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 10px; border-radius:8px; border:1px solid #e8f0ec;
+  text-decoration:none; background:#f7faf9; transition:all 0.15s;
+}
+.addr-card:hover { border-color:#5ba08a; background:#f0faf5; }
+.addr-card-num {
+  width:22px; height:22px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.65rem; font-weight:800; color:white;
+}
+.addr-card-text { flex:1; min-width:0; }
+.addr-card-street { font-size:0.72rem; font-weight:700; color:#2d4a40; line-height:1.3; }
+.addr-card-action { font-size:0.6rem; color:#5ba08a; font-weight:700; margin-top:1px; }
 
 </style>
 </head>
@@ -109,6 +133,10 @@ body {
   <div class="map-legend-row">
     <div class="map-wrap"><div id="flyer-map"></div></div>
 
+  </div>
+  <div class="addr-strip">
+    <div class="addr-strip-title">📍 Participating Addresses</div>
+    <div id="addr-strip-list"></div>
   </div>
   <div class="qr-strip">
     <div class="qr-label">📱 Scan for interactive map</div>
@@ -179,7 +207,7 @@ function refreshMap() {
     markers.push(m);
   });
   if (markers.length > 0) {
-    map.fitBounds(L.featureGroup(markers).getBounds().pad(0.18));
+    map.fitBounds(L.featureGroup(markers).getBounds().pad(0.35));
   }
 }
 
@@ -300,6 +328,28 @@ refreshLegend();
 refreshMap();
 // Force map to fill full width after layout
 setTimeout(function() { map.invalidateSize(); }, 200);
+
+// Build address strip
+var stripList = document.getElementById('addr-strip-list');
+if (stripList) {
+  var valid = pins.filter(function(p) { return p.lat && p.lng; });
+  stripList.className = 'addr-strip-list';
+  stripList.innerHTML = valid.map(function(p, i) {
+    var c = COLORS[i % COLORS.length];
+    var street = p.raw.split(',')[0];
+    var isApple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
+    var mapsUrl = isApple
+      ? 'https://maps.apple.com/?q='+p.lat+','+p.lng
+      : 'https://maps.google.com/?q='+p.lat+','+p.lng;
+    return '<a class="addr-card" href="'+mapsUrl+'" target="_blank">'+
+      '<div class="addr-card-num" style="background:'+c.bg+';color:'+c.tc+'">'+(i+1)+'</div>'+
+      '<div class="addr-card-text">'+
+        '<div class="addr-card-street">'+street+'</div>'+
+        '<div class="addr-card-action">↗ Get Directions</div>'+
+      '</div>'+
+    '</a>';
+  }).join('');
+}
 
 // QR Code
 new QRCode(document.getElementById("qrcode"), {
