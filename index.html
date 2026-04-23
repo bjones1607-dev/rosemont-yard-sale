@@ -87,10 +87,10 @@ body {
 
 .qr-strip {
   display:flex; align-items:center; justify-content:center; gap:14px;
-  padding:10px 20px; background:#f7faf9; border-top:1px solid #e8f0ec;
+  padding:18px 20px; background:#f7faf9; border-top:1px solid #e8f0ec;
 }
 .qr-strip .qr-label { font-size:0.65rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:#7abfa8; }
-#qrcode canvas, #qrcode img { width:70px !important; height:70px !important; }
+#qrcode canvas, #qrcode img { width:160px !important; height:160px !important; }
 
 .tip { margin-top:14px; font-size:0.72rem; color:#7aaa9a; font-weight:600; text-align:center; }
 .addr-strip {
@@ -165,6 +165,7 @@ const COLORS = [
 // Hardcoded verified coords — edit label freely, coords stay locked until you update
 let pins = [
   { raw:'2812 Aylesford Dr, Midlothian, VA 23113',   lat:37.5305292, lng:-77.6824505 },
+  { raw:'2806 Aylesford Dr, Midlothian, VA 23113',   lat:37.5304761, lng:-77.6820639 },
   { raw:'2518 Follensbee Dr, Midlothian, VA 23113',  lat:37.5294248, lng:-77.6871344 },
   { raw:'2513 Follensbee Dr, Midlothian, VA 23113',  lat:37.5287169, lng:-77.6876264 },
 ];
@@ -207,7 +208,7 @@ function refreshMap() {
     markers.push(m);
   });
   if (markers.length > 0) {
-    map.fitBounds(L.featureGroup(markers).getBounds().pad(0.35));
+    map.setView([37.5292, -77.6838], 15);
   }
 }
 
@@ -354,8 +355,8 @@ if (stripList) {
 // QR Code
 new QRCode(document.getElementById("qrcode"), {
   text: "https://bjones1607-dev.github.io/rosemont-yard-sale",
-  width: 90,
-  height: 90,
+  width: 160,
+  height: 160,
   colorDark: "#2d6a5a",
   colorLight: "#ffffff",
   correctLevel: QRCode.CorrectLevel.M
